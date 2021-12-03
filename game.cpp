@@ -7,9 +7,9 @@
 
 using namespace std;
 
-char centerS = 'X';
 char player = 'C';
 char blankSpace = '.';
+char currentBeneathBlock = ' ';
 
 int mapSizeX=27,mapSizeY=13;
 
@@ -25,7 +25,7 @@ int startPlayerPos = mapSize/2;
 int playerPos = startPlayerPos;
 
 int currentPlayerRow;
-int currentCenterRow;
+int currentScreenRow;
 
 vector<char> map;
 
@@ -79,13 +79,17 @@ void createMap()
 void debugInfo()
 {
 	cout << "Player Position: " << playerPos << endl;	
+	cout << "Block beneath: " << currentBeneathBlock << endl;
 	cout << "Center Screen Point: " << centerScreenPoint << endl;		
 	cout << endl;
 	cout << "Camera offset X: " << cameraOffX << endl;
 	cout << "Camera offset Y: " << cameraOffY << endl;
 	cout << endl;
-	cout << "Map Limit Top: " << mapSizeX << endl;
+	cout << "Map Limit Horizontal: " << mapSizeX << endl;
+	cout << "Map Limit Vertical: " << mapSizeY << endl;
+	cout << endl;
 	cout << "Player Current Row: " << currentPlayerRow << endl;
+	cout << "Screen Current Row: " << currentScreenRow << endl;
 }
 
 void drawMap()
@@ -109,20 +113,20 @@ void drawMap()
 
 void updatePlayerPos(int newPos)
 {
-	map[playerPos] = blankSpace;
+	char nextBlock = map[newPos];
+	map[playerPos] = currentBeneathBlock;
 	map[newPos] = player;
 			
 	playerPos = newPos;
 	currentPlayerRow = playerPos / mapSizeX;
+	
+	currentBeneathBlock = nextBlock;
 }
 
 void updateScreen(int newPos)
 {
-	map[centerScreenPoint] = blankSpace;
-	map[newPos] = centerS;
-	
 	centerScreenPoint = newPos;
-	currentCenterRow = centerScreenPoint / mapSizeX;	
+	currentScreenRow = centerScreenPoint / mapSizeX;
 }
 
 void playerMov()
@@ -130,17 +134,53 @@ void playerMov()
 	char ch;
 
 	ch = getch();
-	if		 	(ch=='w'){	if(currentPlayerRow > 0){																			updatePlayerPos(playerPos-mapSizeX);}			drawMap();}	
-	else if (ch == 't'){																															updateScreen(centerScreenPoint-mapSizeX); drawMap();}
-	
-	else if(ch=='s'){		if((currentPlayerRow+1) < mapSizeX){													updatePlayerPos(playerPos+mapSizeX);}			drawMap();}
-	else if (ch == 'g'){	 																														updateScreen(centerScreenPoint+mapSizeX); drawMap();}
-	
-	else if(ch=='a'){		if(playerPos > (currentPlayerRow*mapSizeX)){									updatePlayerPos(playerPos-1);}						drawMap();} 
-	else if (ch == 'f'){																															updateScreen(centerScreenPoint-1); 				drawMap();}
-	
-	else if(ch=='d'){		if(playerPos < ((currentPlayerRow*mapSizeX) + mapSizeX - 1)){	updatePlayerPos(playerPos+1);}						drawMap();}
-	else if (ch == 'h'){	 																														updateScreen(centerScreenPoint+1); 				drawMap();}
+	if	    (ch=='w'){	
+		if(currentPlayerRow > 0){
+			updatePlayerPos(playerPos-mapSizeX);
+		}	
+		if(currentScreenRow-cameraOffY > 0)
+		{
+			updateScreen(centerScreenPoint-mapSizeX);	
+		}			
+		drawMap();
+	}	
+	else if (ch=='s'){		
+		if((currentPlayerRow+1) < mapSizeY){
+			updatePlayerPos(playerPos+mapSizeX);
+		}	
+		if (currentScreenRow+1+cameraOffY < mapSizeY){
+			updateScreen(centerScreenPoint+mapSizeX);	
+		}			
+		drawMap();
+	}
+	else if (ch=='a'){		
+		if(playerPos > (currentPlayerRow*mapSizeX)){
+			updatePlayerPos(playerPos-1); 
+		}
+		if(centerScreenPoint-cameraOffX > (currentScreenRow*mapSizeX)){
+			updateScreen(centerScreenPoint-1);
+		}
+		drawMap();
+	}
+	else if (ch=='d'){		
+		if(playerPos < ((currentPlayerRow*mapSizeX) + mapSizeX - 1)){	
+			updatePlayerPos(playerPos+1); 
+		}		
+		if(centerScreenPoint+cameraOffX < ((currentScreenRow*mapSizeX) + mapSizeX - 1)){
+			updateScreen(centerScreenPoint+1);				
+		}
+		drawMap();
+	} 
+		
+		
+	else if (ch == 't'){
+		updateScreen(centerScreenPoint-mapSizeX); drawMap();}
+	else if (ch == 'g'){	 			
+		updateScreen(centerScreenPoint+mapSizeX); drawMap();}	
+	else if (ch == 'f'){
+		updateScreen(centerScreenPoint-1); 				drawMap();}	
+	else if (ch == 'h'){	 																														
+		updateScreen(centerScreenPoint+1); 				drawMap();}
 }
 
 
@@ -157,6 +197,7 @@ int main()
 {
 	createMap();
 	updatePlayerPos(playerPos);
+	updateScreen(centerScreenPoint);
 	drawMap();
 	
 	gameLoop();	
