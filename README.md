@@ -11,14 +11,17 @@ developed for Windows using Dev C++ with plans to expand to other platforms
 
 ![imggame](https://github.com/ThiagoZen/ASCII_RPG/blob/main/readme_resources/CMD.png)
 
+## Controls
+`w` `a` `s` `d` - Walk
+
 ## Enviroment
 The map will be generated in a one line array that will be shown at the screen according to the size defined, map will be customizable .
 
 
-## Mecanics
+## Mechanics
 The game will be an RPG with dungeons, cities and NPCs (With AI if I have the time and patience), also the game will contain dialogue and quests, inventory and a combat system.
 
-## The Art
+## Art Style
 As said before the game will be played fully in the terminal so the graphics will be ASCII characters, the following are some of the buildings/props created.
 
 House

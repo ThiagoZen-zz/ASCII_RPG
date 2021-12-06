@@ -2,8 +2,8 @@
 #include <conio.h>
 #include <vector>
 #include <windows.h>
-
-#define teste 11;
+#include <fstream>
+#include <math.h>
 
 using namespace std;
 
@@ -11,69 +11,75 @@ char player = 'C';
 char blankSpace = '.';
 char currentBeneathBlock = ' ';
 
-int mapSizeX=27,mapSizeY=13;
+vector<char> map;
 
-int mapSize = mapSizeX * mapSizeY;
+int mapSizeX=55,mapSizeY=25;
+int mapSize;
 
-int screenSizeX = 25,screenSizeY=11;
+int screenSizeX = 35,screenSizeY=15;
 
 int startCameraOffX = screenSizeX/2, startCameraOffY = screenSizeY/2;
 int cameraOffX = startCameraOffX, cameraOffY = startCameraOffY;
 
-int centerScreenPoint = mapSize/2;
-int startPlayerPos = mapSize/2;
-int playerPos = startPlayerPos;
+int centerScreenPoint;
+int playerPos;
 
 int currentPlayerRow;
 int currentScreenRow;
 
-vector<char> map;
-
-char house[4][11] = 
-{
-	{' ','_','_','_','_','_','_','_','_','_',' '},
-	{'/','_','|','_','|','_','|','_','|','_','\\'},
-	{'|','|','_','|','_','_','_','|','_','|','|'},
-	{'|','_','_','_','|',' ','|','_','_','_','|'}
+char inventory[4][35]{
+	{'.','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','.'},
+	{'|',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','|'},
+	{'|',' ','P','L','A','C','E','H','O','L','D','E','R',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','|'},
+	{'.','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','.'}
 };
 
-char tree[5][8] = 
-{
-	{' ',',','_','_',' ','_',',',' '},
-	{'/',' ',' ',',','\\',' ',',','\\'},
-	{'\\',',','_','_','|',',','_','/'},
-	{' ',' ','|','|','/','/',' ',' '},
-	{' ','/','_','_','\\',' ',' ',' '}
-};
+void readMap(){
+	ifstream mapFile( "map.txt" );
+  
+  for(string line; getline( mapFile, line ); )
+	{
+		for(int i = 0; i < line.size(); i++)
+		{
+			map.push_back(line[i]);
+		} 		
+	}
+	
+	mapFile.close();
+}
 
-void drawObj(int startHousePos,void *arr, int y,int x)
-{
+void setupInitialVar(){
+	mapSize = map.size();
+	centerScreenPoint = mapSize/2;
+	playerPos = mapSize/2;
+}
+
+void drawInventory(void *arr, int y,int x){
 	char (*obj)[y][x] = (char (*)[y][x]) arr;
 	
 	int arrayRow = y;
 	int arrayCol = x;
 		
-	int objPos = startHousePos;
 	for(int i=0;i < arrayRow; i++)
 	{
 		for(int x=0; x < arrayCol; x++)
-			map[objPos + x] = (*obj)[i][x];
-		objPos += mapSizeX;
-	}	
+			cout << (*obj)[i][x];
+		cout << "\n";
+	}
 }
 
-void createMap()
-{
-	for(int i=0; i<mapSize; i++)
-	{
-		map.push_back('.');
+void drawMapView(){
+	int centerDiagonalLeft = centerScreenPoint - (mapSizeX * cameraOffY) - cameraOffX;
+	int currentRow = 0;
+	for(int y=0;y < screenSizeY; y++)
+	{ 		
+		for(int x = centerDiagonalLeft + currentRow; x < centerDiagonalLeft + screenSizeX + currentRow; x++)
+		{
+			cout << map[x];
+		}
+		cout << "\n";
+		currentRow += mapSizeX;
 	}
-	
-	/// Drawing objs
-	// Houses
-	//drawObj(970,house,4,11);
-	// Trees
-	drawObj(150,tree,5,8);
 }
 
 void debugInfo()
@@ -92,23 +98,14 @@ void debugInfo()
 	cout << "Screen Current Row: " << currentScreenRow << endl;
 }
 
-void drawMap()
+void drawScreen()
 {
 	system("cls");
 	
-	int centerDiagonalLeft = centerScreenPoint - (mapSizeX * cameraOffY) - cameraOffX;
-	int currentRow = 0;
-	for(int y=0;y < screenSizeY; y++)
-	{ 		
-		for(int x = centerDiagonalLeft + currentRow; x < centerDiagonalLeft + screenSizeX + currentRow; x++)
-		{
-			cout << map[x];
-		}
-		cout << "\n";
-		currentRow += mapSizeX;
-	}	
+	drawMapView();
+	drawInventory(inventory,4,35);
 	
-	debugInfo();
+	//debugInfo();
 }
 
 void updatePlayerPos(int newPos)
@@ -142,7 +139,7 @@ void playerMov()
 		{
 			updateScreen(centerScreenPoint-mapSizeX);	
 		}			
-		drawMap();
+		drawScreen();
 	}	
 	else if (ch=='s'){		
 		if((currentPlayerRow+1) < mapSizeY){
@@ -151,7 +148,7 @@ void playerMov()
 		if (currentScreenRow+1+cameraOffY < mapSizeY){
 			updateScreen(centerScreenPoint+mapSizeX);	
 		}			
-		drawMap();
+		drawScreen();
 	}
 	else if (ch=='a'){		
 		if(playerPos > (currentPlayerRow*mapSizeX)){
@@ -160,7 +157,7 @@ void playerMov()
 		if(centerScreenPoint-cameraOffX > (currentScreenRow*mapSizeX)){
 			updateScreen(centerScreenPoint-1);
 		}
-		drawMap();
+		drawScreen();
 	}
 	else if (ch=='d'){		
 		if(playerPos < ((currentPlayerRow*mapSizeX) + mapSizeX - 1)){	
@@ -169,18 +166,18 @@ void playerMov()
 		if(centerScreenPoint+cameraOffX < ((currentScreenRow*mapSizeX) + mapSizeX - 1)){
 			updateScreen(centerScreenPoint+1);				
 		}
-		drawMap();
+		drawScreen();
 	} 
 		
 		
 	else if (ch == 't'){
-		updateScreen(centerScreenPoint-mapSizeX); drawMap();}
+		updateScreen(centerScreenPoint-mapSizeX); drawScreen();}
 	else if (ch == 'g'){	 			
-		updateScreen(centerScreenPoint+mapSizeX); drawMap();}	
+		updateScreen(centerScreenPoint+mapSizeX); drawScreen();}	
 	else if (ch == 'f'){
-		updateScreen(centerScreenPoint-1); 				drawMap();}	
+		updateScreen(centerScreenPoint-1); 				drawScreen();}	
 	else if (ch == 'h'){	 																														
-		updateScreen(centerScreenPoint+1); 				drawMap();}
+		updateScreen(centerScreenPoint+1); 				drawScreen();}
 }
 
 
@@ -195,10 +192,13 @@ void gameLoop()
 
 int main() 
 {
-	createMap();
+	readMap();
+	setupInitialVar();
+		
 	updatePlayerPos(playerPos);
 	updateScreen(centerScreenPoint);
-	drawMap();
+		
+	drawScreen();
 	
 	gameLoop();	
 
