@@ -77,7 +77,7 @@ int main() {
   drawObj(76,tree,5,8);
   drawObj(558,tree,5,8);
   //House
-  drawObj(685,house,4,11);
+  drawObj(695,house,4,11);
   drawObj(94,house,4,11);
   
   writeOnFile();
