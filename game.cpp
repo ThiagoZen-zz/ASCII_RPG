@@ -7,14 +7,22 @@
 
 using namespace std;
 
+#include "inventory.h"
+
 char player = 'C';
 char blankSpace = '.';
 char currentBeneathBlock = ' ';
 
 vector<char> map;
-
 int mapSizeX=55,mapSizeY=25;
 int mapSize;
+
+vector<char> store;
+int storeSizeX = 35,storeSizeY = 15;
+int storeSize;
+
+int scenarioX,scenarioY;
+int scenarioSize;
 
 int screenSizeX = 35,screenSizeY=15;
 
@@ -29,12 +37,7 @@ int currentPlayerColumn;
 int currentScreenRow;
 int currentScreenColumn;
 
-char inventory[4][35]{
-	{'.','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','.'},
-	{'|',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','|'},
-	{'|',' ','P','L','A','C','E','H','O','L','D','E','R',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','|'},
-	{'.','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','.'}
-};
+bool currentScenario;
 
 void readMap(){
 	ifstream mapFile( "map.txt" );
@@ -50,75 +53,104 @@ void readMap(){
 	mapFile.close();
 }
 
-void setupInitialVar(){
-	mapSize = map.size();
-	centerScreenPoint = mapSize/2;
-	playerPos = mapSize/2;
-}
-
-void drawInventory(void *arr, int y,int x){
-	char (*obj)[y][x] = (char (*)[y][x]) arr;
-	
-	int arrayRow = y;
-	int arrayCol = x;
-		
-	for(int i=0;i < arrayRow; i++)
+void genStore(){
+	for(int i=0; i < storeSizeY; i++)
 	{
-		for(int x=0; x < arrayCol; x++)
-			cout << (*obj)[i][x];
-		cout << "\n";
+		for(int x=0; x < storeSizeX; x++)
+		{
+			if(i == 0 || x == 0 || x == storeSizeX-1)
+				store.push_back('+');
+			else if(i == storeSizeY-1){
+				if(x == 5|| x == 6 || x == 7)
+					store.push_back('-');
+				else
+					store.push_back('+');
+			}
+			else
+				store.push_back('.');
+		}
 	}
 }
 
-void drawMapView(){
-	int centerDiagonalLeft = centerScreenPoint - (mapSizeX * cameraOffY) - cameraOffX;
+void drawScenario(vector<char> customVec){
+	int centerDiagonalLeft = centerScreenPoint - (scenarioX * cameraOffY) - cameraOffX;
 	int currentRow = 0;
 	for(int y=0;y < screenSizeY; y++)
 	{ 		
 		for(int x = centerDiagonalLeft + currentRow; x < centerDiagonalLeft + screenSizeX + currentRow; x++)
 		{
-			cout << map[x];
+			cout << customVec[x];
 		}
 		cout << "\n";
-		currentRow += mapSizeX;
+		currentRow += scenarioX;
 	}
 }
 
 void debugInfo()
 {
 	cout << "Player Position: " << playerPos << endl;	
-	cout << "Center Screen Point: " << centerScreenPoint << endl;	
-	cout << "Block beneath: " << currentBeneathBlock << endl;		
+	cout << "Center Screen Point: " << centerScreenPoint << endl;			
 	cout << endl;
-	cout << "Map Limit Horizontal: " << mapSizeX << endl;
-	cout << "Map Limit Vertical: " << mapSizeY << endl;
+	//cout << "Map Limit Horizontal: " << mapSizeX << endl;
+	//cout << "Map Limit Vertical: " << mapSizeY << endl;
+	cout << "Map Limit Horizontal: " << scenarioX << endl;
+	cout << "Map Limit Vertical: " << scenarioY << endl;
 	cout << endl;
-	cout << "Player Current Row: " << currentPlayerRow << endl;
-	cout << "Player Current Column: " << currentPlayerColumn << endl;
-	cout << "Screen Current Row: " << currentScreenRow << endl;
-	cout << "Screen Current Column: " << currentScreenColumn << endl;
+	//cout << "Player Current Row: " << currentPlayerRow << endl;
+	//cout << "Player Current Column: " << currentPlayerColumn << endl;
+	//cout << "Screen Current Row: " << currentScreenRow << endl;
+	//cout << "Screen Current Column: " << currentScreenColumn << endl;
+	cout << endl;
+	cout << "current Scenario: " << currentScenario << endl;
+}
+
+void setupCurrentScenarioSize(){
+	if(currentScenario == 0){
+		scenarioX = mapSizeX;
+		scenarioY = mapSizeY;
+	}else{
+		scenarioX = storeSizeX;
+		scenarioY = storeSizeY;
+	}
+	scenarioSize = scenarioX * scenarioY;
 }
 
 void drawScreen()
 {
 	system("cls");									// Erasing the screen
+	setupCurrentScenarioSize();
+	if(currentScenario == 0){
+		drawScenario(map);
+	}
+	else{
+		drawScenario(store);
+	}
 	
-	drawMapView(); 									// Drawing the map according to the screen size
 	drawInventory(inventory,4,35); 	// Drawing the inventory at the bottom of the screen
 	
-	//debugInfo(); 									// Printing the Debug Info
+	//debugInfo(); 										// Printing the Debug Info
 }
 
 void updatePlayerPos(int newPos)
 {
-	char nextBlock = map[newPos];
+	char nextBlock;
+	if(currentScenario == 0)
+		nextBlock = map[newPos];
+	else
+		nextBlock = store[newPos];
+		
 	if(nextBlock == blankSpace){ 		//Detecting collision with other objects
-		map[playerPos] = currentBeneathBlock;
-		map[newPos] = player;
-				
+		if(currentScenario == 0){
+			map[playerPos] = currentBeneathBlock;
+			map[newPos] = player;
+		}else{
+			store[playerPos] = currentBeneathBlock;
+			store[newPos] = player;
+		}
+			
 		playerPos = newPos;
-		currentPlayerRow = playerPos / mapSizeX;
-		currentPlayerColumn = playerPos - currentPlayerRow * mapSizeX;
+		currentPlayerRow = playerPos / scenarioX;
+		currentPlayerColumn = playerPos - currentPlayerRow * scenarioX;
 		
 		currentBeneathBlock = nextBlock;
 	}
@@ -127,8 +159,32 @@ void updatePlayerPos(int newPos)
 void updateScreen(int newPos)
 {
 	centerScreenPoint = newPos;
-	currentScreenRow = centerScreenPoint / mapSizeX;
-	currentScreenColumn = centerScreenPoint - currentScreenRow * mapSizeX;
+	currentScreenRow = centerScreenPoint / scenarioX;
+	currentScreenColumn = centerScreenPoint - currentScreenRow * scenarioX;
+}
+
+void removePlayerFromScenario(){
+	if(currentScenario != 0){
+		map[playerPos] = currentBeneathBlock;
+	}else{
+		store[playerPos] = currentBeneathBlock;
+	}
+}
+
+void setupInitialVal(){
+	setupCurrentScenarioSize();
+	
+	centerScreenPoint = scenarioSize/2;
+	playerPos = scenarioSize/2;
+	
+	updatePlayerPos(playerPos);				// Giving the player an initial position
+	updateScreen(centerScreenPoint);	// Giving the Screen an initial position
+}
+
+void changeScenario(){
+	currentScenario = !currentScenario;
+	removePlayerFromScenario();
+	setupInitialVal();
 }
 
 void playerMov()
@@ -136,24 +192,30 @@ void playerMov()
 	char ch;
 
 	ch = getch();
+	
+	if	(ch=='h'){	
+		changeScenario();
+		drawScreen();
+	}	
+	
 	if	    (ch=='w'){	
 		if(currentPlayerRow > 0){
-			updatePlayerPos(playerPos-mapSizeX);
+			updatePlayerPos(playerPos-scenarioX);
 		}	
 		
 		if((currentScreenRow > cameraOffY) && (currentPlayerRow < currentScreenRow))
 		{
-			updateScreen(centerScreenPoint-mapSizeX);	
+			updateScreen(centerScreenPoint-scenarioX);	
 		}
 		drawScreen();
 	}	
 	else if (ch=='s'){		
-		if((currentPlayerRow+1) < mapSizeY){
-			updatePlayerPos(playerPos+mapSizeX);
+		if((currentPlayerRow+1) < scenarioY){
+			updatePlayerPos(playerPos+scenarioX);
 		}	
 		
-		if ((currentScreenRow+1+cameraOffY < mapSizeY) && (currentPlayerRow > currentScreenRow)){
-			updateScreen(centerScreenPoint+mapSizeX);	
+		if ((currentScreenRow+1+cameraOffY < scenarioY) && (currentPlayerRow > currentScreenRow)){
+			updateScreen(centerScreenPoint+scenarioX);	
 		}
 		drawScreen();
 	}
@@ -161,16 +223,16 @@ void playerMov()
 		if(currentPlayerColumn > 0){
 			updatePlayerPos(playerPos-1); 
 		}
-		if((centerScreenPoint-cameraOffX > currentScreenRow*mapSizeX) && (currentPlayerColumn < currentScreenColumn)){
+		if((centerScreenPoint-cameraOffX > currentScreenRow*scenarioX) && (currentPlayerColumn < currentScreenColumn)){
 			updateScreen(centerScreenPoint-1);
 		}
 		drawScreen();
 	}
 	else if (ch=='d'){		
-		if(currentPlayerColumn+1 < mapSizeX){	
+		if(currentPlayerColumn+1 < scenarioX){	
 			updatePlayerPos(playerPos+1); 
 		}		
-		if((centerScreenPoint+cameraOffX < (currentScreenRow*mapSizeX) + mapSizeX - 1) && (currentPlayerColumn > currentScreenColumn) ){
+		if((centerScreenPoint+cameraOffX < (currentScreenRow*scenarioX) + scenarioX - 1) && (currentPlayerColumn > currentScreenColumn) ){
 			updateScreen(centerScreenPoint+1);				
 		}
 		drawScreen();
@@ -189,11 +251,16 @@ void gameLoop()
 
 int main() 
 {
-	readMap();												// Reading the map from a file
-	setupInitialVar();								// Initializing variables according to the environment values
-		
-	updatePlayerPos(playerPos);				// Giving the player an initial position
-	updateScreen(centerScreenPoint);	// Giving the Screen an initial position
+	// Generating/Reading Scenario Informations
+	readMap();
+	genStore();
+	
+	// Setup the size of the scenarios
+	mapSize = map.size();
+	storeSize = storeSizeX * storeSizeY;
+	
+	// Setup the first variables
+	setupInitialVal();	
 		
 	drawScreen();											// Drawing the initial objects to the screen
 	
